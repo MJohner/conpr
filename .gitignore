@@ -73,3 +73,8 @@ fabric.properties
 # Gradle and build
 build/
 .gradle/
+.idea
+
+.classpath
+.project
+.settings
