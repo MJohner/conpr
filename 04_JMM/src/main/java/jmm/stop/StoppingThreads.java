@@ -3,7 +3,7 @@ package jmm.stop;
 public class StoppingThreads {
 
     static class StoppableThread extends Thread {
-        private boolean running = true;
+        private volatile boolean running = true;
 
         public void terminate() {
             running = false;
@@ -17,9 +17,9 @@ public class StoppingThreads {
         public void run() {
             while (isRunning()) {
                 doSomeWork();
-                //System.out.println("isRunning() = " + isRunning());
+                 // System.out.println("isRunning() = " + isRunning());
             }
-            //System.out.println("isRunning() = " + isRunning());
+            // System.out.println("isRunning() = " + isRunning());
         }
 
         private void doSomeWork() {
