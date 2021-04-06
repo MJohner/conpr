@@ -6,4 +6,5 @@ module threads {
     requires javafx.base;
     requires javafx.controls;
     requires javafx.graphics;
+    requires jcip.annotations;
 }

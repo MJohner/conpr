@@ -44,7 +44,7 @@ class R implements Runnable {
     private Counter c;
 
     public R(Counter c) {
-        this.c = c;
+         this.c = c;
     }
 
     public void run() {
