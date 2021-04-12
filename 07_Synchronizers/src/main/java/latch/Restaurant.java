@@ -1,22 +1,28 @@
 package latch;
 
+import java.util.concurrent.CountDownLatch;
+
 public class Restaurant {
 
     public static void main(String[] args) {
         int nrGuests = 2;
+        CountDownLatch waitForCook = new CountDownLatch(1);
+        CountDownLatch waitForDishes = new CountDownLatch(nrGuests);
 
-        new Cook(/* TODO */).start();
+        new Cook(waitForCook).start();
 
         for (int i = 0; i < nrGuests; i++) {
-            new Guest(/* TODO */).start();
+            new Guest(waitForCook, waitForDishes).start();
         }
 
-        new DishWasher(/* TODO */).start();
+        new DishWasher(waitForDishes).start();
     }
 
 
     static class Cook extends Thread {
-        public Cook(/* TODO */) {
+        CountDownLatch waitForCook;
+        public Cook(CountDownLatch waitForCook) {
+            this.waitForCook = waitForCook;
         }
 
         @Override
@@ -27,13 +33,17 @@ public class Restaurant {
             } catch (InterruptedException e) {
             }
             System.out.println("Meal is ready");
-            /* TODO */
+            waitForCook.countDown();
         }
     }
 
 
     static class Guest extends Thread {
-        public Guest(/* TODO */) {
+        CountDownLatch waitForCook;
+        CountDownLatch waitForDishes;
+        public Guest(CountDownLatch waitForCook,CountDownLatch waitForDishes) {
+            this.waitForCook = waitForCook;
+            this.waitForDishes = waitForDishes;
         }
 
         @Override
@@ -41,11 +51,11 @@ public class Restaurant {
             try {
                 sleep(1000);
                 System.out.println("Entering restaurant and placing order.");
-                /* TODO */
+                waitForCook.await();
                 System.out.println("Enjoying meal.");
                 sleep(5000);
                 System.out.println("Meal was excellent!");
-                /* TODO */
+                waitForDishes.countDown();
             } catch (InterruptedException e) {
             }
         }
@@ -53,14 +63,16 @@ public class Restaurant {
 
 
     static class DishWasher extends Thread {
-        public DishWasher(/* TODO */) {
+        CountDownLatch waitForDishes;
+        public DishWasher(CountDownLatch waitForDishes) {
+            this.waitForDishes = waitForDishes;
         }
 
         @Override
         public void run() {
             try {
                 System.out.println("Waiting for dirty dishes.");
-                /* TODO */
+                waitForDishes.await();
                 System.out.println("Washing dishes.");
                 sleep(0);
             } catch (InterruptedException e) {
