@@ -1,22 +1,27 @@
 package blockingQueue;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+
 public class OrderProcessing {
 
     public static void main(String[] args) {
         int nCustomers = 10;
         int nValidators = 2;
         int nProcessors = 3;
+        LinkedBlockingDeque<Order> ordersOrdered = new LinkedBlockingDeque<>();
+        LinkedBlockingDeque<Order> ordersValidated = new LinkedBlockingDeque<>();
 
         for (int i = 0; i < nCustomers; i++) {
-            new Customer("" + i /* TODO */).start();
+            new Customer("" + i, ordersOrdered).start();
         }
 
         for (int i = 0; i < nValidators; i++) {
-            new OrderValidator(/* TODO */).start();
+            new OrderValidator(ordersOrdered, ordersValidated).start();
         }
 
         for (int i = 0; i < nProcessors; i++) {
-            new OrderProcessor(/* TODO */).start();
+            new OrderProcessor(ordersValidated).start();
         }
     }
 
@@ -37,9 +42,10 @@ public class OrderProcessing {
 
 
     static class Customer extends Thread {
-
-        public Customer(String name /* TODO */) {
+        LinkedBlockingDeque<Order> orders;
+        public Customer(String name, LinkedBlockingDeque<Order> orders) {
             super(name);
+            this.orders = orders;
         }
 
         private Order createOrder() {
@@ -49,7 +55,7 @@ public class OrderProcessing {
         }
 
         private void handOverToValidator(Order o) throws InterruptedException {
-            // TODO
+            orders.push(o);
         }
 
         @Override
@@ -67,20 +73,23 @@ public class OrderProcessing {
 
 
     static class OrderValidator extends Thread {
-
-        public OrderValidator(/* TODO */) {
+        LinkedBlockingDeque<Order> ordersOrdered;
+        LinkedBlockingDeque<Order> ordersValidated;
+        public OrderValidator(LinkedBlockingDeque<Order> ordersOrdered, LinkedBlockingDeque<Order> ordersValidated) {
+            this.ordersOrdered = ordersOrdered;
+            this.ordersValidated = ordersValidated;
         }
 
         public Order getNextOrder() throws InterruptedException {
-            return null; // TODO
+            return ordersOrdered.take();
         }
 
         public boolean isValid(Order o) {
-            return o.itemId < 50;
+            return o != null && o.itemId < 50;
         }
 
         public void handOverToProcessor(Order o) throws InterruptedException {
-            // TODO
+            ordersValidated.put(o);
         }
 
         @Override
@@ -102,12 +111,13 @@ public class OrderProcessing {
 
 
     static class OrderProcessor extends Thread {
-
-        public OrderProcessor(/* TODO */) {
+        LinkedBlockingDeque<Order> orders;
+        public OrderProcessor(LinkedBlockingDeque<Order> orders) {
+            this.orders = orders;
         }
 
         public Order getNextOrder() throws InterruptedException {
-            return null; // TODO
+            return orders.take();
         }
 
         public void processOrder(Order o) {
