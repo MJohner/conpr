@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    jcenter()
+    flatDir { dirs 'lib' }
+}
+
+sourceCompatibility = 13
+targetCompatibility = 13
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+
+def currentOS = org.gradle.internal.os.OperatingSystem.current()
+def platform
+if (currentOS.isWindows()) {
+    platform = 'win'
+} else if (currentOS.isLinux()) {
+    platform = 'linux'
+} else if (currentOS.isMacOsX()) {
+    platform = 'mac'
+}
+
+dependencies {
+    compile "org.openjfx:javafx-base:13:${platform}"
+    compile "org.openjfx:javafx-graphics:13:${platform}"
+    compile "org.openjfx:javafx-controls:13:${platform}"
+    compile "org.openjfx:javafx-swing:13:${platform}"
+}
+
+dependencies {
+    compile ':bank-core:'
+}
