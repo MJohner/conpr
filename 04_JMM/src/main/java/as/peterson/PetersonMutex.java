@@ -8,14 +8,17 @@ import java.util.Map;
  * @see http://de.wikipedia.org/wiki/Algorithmus_von_Peterson
  */
 public class PetersonMutex implements Mutex {
+    private static class volatileRef{
+        volatile boolean b = false;
+    }
     /** Associates the two threads with an index. */
     private final Map<Thread, Integer> idToIndex = new HashMap<>();
 
     /** Entry enter[i] indicates that thread i wants to get the lock. */
-    private final boolean[] enter = {false, false};
+    private final volatileRef[] enter = {new volatileRef(), new volatileRef()};
 
     /** Defines which thread proceeds if both threads acquire the lock. */
-    private int turn = 0;
+    private volatile int turn = 0;
 
     /** Register the two threads for simplicity. */
     public PetersonMutex(Thread t0, Thread t1) {
@@ -35,9 +38,10 @@ public class PetersonMutex implements Mutex {
         @SuppressWarnings("unused")
         long t = 0;
 
-        enter[index] = true;
+        enter[index].b = true;
+
         turn = otherIndex;
-        while (enter[otherIndex] && turn != index) {
+        while (turn != index && enter[otherIndex].b) {
 //            if (System.currentTimeMillis() - t > 100) {
 //                System.out.println(turn);
 //                t = System.currentTimeMillis();
@@ -47,6 +51,6 @@ public class PetersonMutex implements Mutex {
 
     @Override
 	public void unlock() {
-		enter[getIndex()] = false;
+        enter[getIndex()].b = false;
 	}
 }
