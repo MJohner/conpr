@@ -14,5 +14,6 @@ public interface Crawler {
      * @param startURL the URL to start crawling the web
      * @return a list of urls which are reachable from {@code startURL}
      */
+    int MAX_VISITS = 20;
     List<String> crawl(String startURL);
 }
