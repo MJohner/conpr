@@ -1,20 +1,48 @@
 plugins {
     id 'java'
+    id 'eclipse'
+    id 'idea'
 }
 
-group 'org.example'
-version '1.0-SNAPSHOT'
+sourceCompatibility = 13
+targetCompatibility = 13
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
 
 repositories {
-    mavenCentral()
+    jcenter()
 }
 
 dependencies {
-    implementation 'junit:junit:4.12'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    compile 'net.jcip:jcip-annotations:1.0'
+    compile 'junit:junit:4.12'
 }
 
-test {
-    useJUnitPlatform()
+
+task gradleWrapper(type: Wrapper)
+task zip(type: Zip) {
+    from projectDir
+    description "Creates student distribution."
+    group = 'distribution'
+
+    dependsOn gradleWrapper
+
+    include 'build.gradle'
+
+    include 'gradle/**'
+    include 'gradlew'
+    include 'gradlew.bat'
+
+
+    include 'src/main/java/atomics/AtomicFieldUpdaterCounter.java'
+    include 'src/main/java/atomics/AtomicFieldUpdaterCounterTest.java'
+    include 'src/main/java/atomics/ConcurrentStack.java'
+    include 'src/main/java/atomics/LinkedQueue.java'
+    include 'src/main/java/atomics/NumberRangeWrong.java'
+    include 'src/main/java/atomics/UnsafeCounter.java'
+    include 'src/main/java/atomics/UnsafeCounterTest.java'
+
+    include 'src/main/java/as/list/CoWList.java'
+    include 'src/main/java/as/list/CoWListTest.java'
+    include 'src/main/java/as/queue/LinkedQueue.java'
 }

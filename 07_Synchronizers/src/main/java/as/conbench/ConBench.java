@@ -24,7 +24,7 @@ public class ConBench {
      */
     public static void main(String[] args) throws Exception {
         // Put your benchmark classes here for easy development
-        Class<?>[] benchClasses = {CacheEffects.class};// , WriteBench.class, CacheEffects.class, CounterBench.class, MapBench.class };
+        Class<?>[] benchClasses = {CounterBench.class};
 
         if (args.length > 0) {
             Class<?>[] classes = new Class<?>[args.length];
@@ -44,14 +44,16 @@ public class ConBench {
     public static BenchmarkRunner createRunner() {
         return new BarrierConprRunner();
     }
-
+    public static BenchmarkRunner ownRunner() {
+        return new BenchmarkRunnerImpl();
+    }
     /**
      * Runs the given benchmark classes.
      *
      * @param benchmarkClasses the benchmark classes
      */
     public static void runBenchmarks(Class<?>... benchmarkClasses) {
-        BenchmarkRunner runner = createRunner();
+        BenchmarkRunner runner = ownRunner();
         for (Class<?> benchmarkClass : benchmarkClasses) {
             for (BenchmarkDescriptor desc : analyzeClass(benchmarkClass)) {
                 runner.runBenchmark(desc);

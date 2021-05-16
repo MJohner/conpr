@@ -33,6 +33,7 @@ public class MS1 implements Runnable {
 
     @Override
     public void run() {
+        print("Run");
         if (end - start <= 1) {
             return;
         } else {
@@ -44,10 +45,10 @@ public class MS1 implements Runnable {
             Future<?> lf = ex.submit(left);
             Future<?> rf = ex.submit(right);
             try {
-                //print("Waiting for subtasks");
+                print("Waiting for subtasks");
                 lf.get();
                 rf.get();
-                //print("Subtasks are ready");
+                print("Subtasks are ready");
             } catch (Exception e) {
             }
             merge(elems, temp, start, mid, end);

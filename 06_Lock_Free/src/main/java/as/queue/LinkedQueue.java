@@ -1,5 +1,6 @@
 package as.queue;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -64,8 +65,24 @@ public class LinkedQueue<E> {
     }
 
     public E get() {
-        // TODO Assignment Lock-Free Assignments
-        throw new UnsupportedOperationException();
+        while(true){
+            Node<E> curHead = head.get();
+            Node<E> curTail = tail.get();
+            Node<E> firstNode = curHead.next.get();
+            if(curTail == curHead){
+                if(firstNode == null){
+                    throw new NoSuchElementException();
+                }else{
+                    tail.compareAndSet(curTail, firstNode);
+                }
+            }else if( head.compareAndSet(curHead, firstNode)){
+                E item = firstNode.item;
+                firstNode.item = null;
+                return item;
+
+
+            }
+        }
     }
 
 }

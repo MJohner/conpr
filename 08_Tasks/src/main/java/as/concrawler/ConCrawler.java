@@ -1,5 +1,6 @@
 package as.concrawler;
 
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -11,6 +12,9 @@ import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,16 +24,22 @@ import java.util.regex.Pattern;
  * http://localhost:8080/
  */
 public class ConCrawler {
-    /** Port of the webserver. */
+    /**
+     * Port of the webserver.
+     */
     private static final int PORT = 8080;
-
+    private static ExecutorService exec;
     static final String HEADER_OK = "HTTP/1.0 200 OK\r\nConnection: close\r\nServer: WebCrawler v0\r\nContent-Type: text/html\r\n\r\n";
     static final String HEADER_404 = "HTTP/1.0 404 Not Found\r\nConnection: close\r\nServer: WebCrawler v0\r\n";
 
-    /** Replace this string in HTML_TEMPLATE to fill result section. */
+    /**
+     * Replace this string in HTML_TEMPLATE to fill result section.
+     */
     private static String RESULT_PLACEHOLDER = "<div id='RESULT_SECTION'/>\n";
 
-    /** Website of the crawler. */
+    /**
+     * Website of the crawler.
+     */
     private static String HTML_TEMPLATE =
             "<html>\n" +
                     "  <body>\n" +
@@ -42,32 +52,49 @@ public class ConCrawler {
                     "  </body>\n" +
                     "</html>\n";
 
-    /** The webcrawler instance. */
-    private static Crawler crawler = new SeqCrawler();
+    /**
+     * The webcrawler instance.
+     */
+    //private static Crawler crawler = new SeqCrawler();
+    private static Crawler crawler = new ParCrawler();
 
     private static final Pattern QUERY_PATTERN = Pattern.compile("GET /\\?q=(.*) HTTP/1\\.(0|1)");
 
-    /** Starts the webserver. */
+    /**
+     * Starts the webserver.
+     */
     public static void main(String[] args) throws IOException {
         final ConCrawler webServer = new ConCrawler();
+        exec = Executors.newFixedThreadPool(10);
         webServer.start();
     }
 
 
-    /** Starts the request handler loop. */
+    /**
+     * Starts the request handler loop.
+     */
     public void start() throws IOException {
         System.out.println("ConCrawler started: http://localhost:" + PORT);
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             while (true) {
                 final Socket connection = serverSocket.accept();
-                handleRequest(connection);
+                Runnable task = () -> {
+                    try {
+                        handleRequest(connection);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                };
+                exec.submit(task);
             }
         }
     }
 
 
-    /** Handles a single request. *
+    /**
+     * Handles a single request. *
+     *
      * @throws IOException
      */
     public void handleRequest(Socket connection) throws IOException {
@@ -85,6 +112,7 @@ public class ConCrawler {
                 final String query = extractQuery(request);
                 final long startTime = System.currentTimeMillis();
                 final List<String> urls = crawler.crawl(query);
+                //final List<String> urls = exec.submit(new CallableCrawler(query)).get();
                 final long duration = System.currentTimeMillis() - startTime;
                 response = formatResult(query, urls, duration);
             } else {
@@ -94,20 +122,28 @@ public class ConCrawler {
             System.out.println("RESPONSE: " + response);
             out.write(response);
             out.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    /** Returns true if the given request is a query. */
+    /**
+     * Returns true if the given request is a query.
+     */
     private boolean isQuery(String request) {
         return QUERY_PATTERN.matcher(request).matches();
     }
 
-    /** Returns true if the given request matches root. */
+    /**
+     * Returns true if the given request matches root.
+     */
     private boolean isRoot(String request) {
         return request.matches("GET / HTTP/1\\.(0|1)");
     }
 
-    /** Returns an OK HTTP header accompanied by the result html content. */
+    /**
+     * Returns an OK HTTP header accompanied by the result html content.
+     */
     private String formatResult(String query, List<String> urls, long duration) {
         final String resultTitle = "<h2>URLs reachable from: " + query + "</h2>\n";
 
@@ -123,7 +159,9 @@ public class ConCrawler {
         return HEADER_OK + body;
     }
 
-    /** Extracts the query of the request. */
+    /**
+     * Extracts the query of the request.
+     */
     private String extractQuery(String request) throws UnsupportedEncodingException {
         final Matcher matcher = QUERY_PATTERN.matcher(request);
         if (matcher.matches()) {
