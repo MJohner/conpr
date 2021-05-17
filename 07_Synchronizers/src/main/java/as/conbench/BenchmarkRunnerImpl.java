@@ -1,9 +1,9 @@
 package as.conbench;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class BenchmarkRunnerImpl implements BenchmarkRunner {
@@ -19,10 +19,14 @@ public class BenchmarkRunnerImpl implements BenchmarkRunner {
         for (int i = 0; i < numberOfRuns; i++) {
             AtomicReference<Long> end = new AtomicReference<>(0L);
             run = new shouldRun();
-            int nrOfThreads = desc.testMethods.stream().flatMapToInt(t -> Arrays.stream(t.nThreads)).sum();
-            barrier = new CyclicBarrier(nrOfThreads, () -> end.set(System.nanoTime()));
-            prepareMethods(desc, i);
+
+            AtomicInteger nrOfThreads = new AtomicInteger();
+            desc.testMethods.forEach(tm -> nrOfThreads.addAndGet(tm.nThreads[0]));
+            barrier = new CyclicBarrier(nrOfThreads.get(), () -> end.set(System.nanoTime()));
+            benchMarkRun(desc, i);
+            System.out.println("Run " + i + " start ");
             Long start = System.nanoTime();
+
             run.yes();
 
             while (end.get() == 0L) {
@@ -49,13 +53,16 @@ public class BenchmarkRunnerImpl implements BenchmarkRunner {
 
     }
 
-    private void prepareMethods(BenchmarkDescriptor desc, int runNumber) {
+    private void benchMarkRun(BenchmarkDescriptor desc, int runNumber) {
+        System.out.println("Run " + runNumber + " setup");
         desc.testMethods.forEach(tm -> {
             for (int i = 0; i < tm.nThreads[runNumber]; i++) {
-                new startBox(new Thread(() -> {
+                new Thread(() -> {
+                    System.out.println("Ready: "+Thread.currentThread().getName());
                     while (!run.isShouldRun()) {
 
                     }
+                    System.out.println("Go: "+Thread.currentThread().getName());
                     try {
                         tm.method.invoke(desc.testClass.newInstance(), desc.nTimes, 1);
                     } catch (IllegalAccessException e) {
@@ -72,22 +79,10 @@ public class BenchmarkRunnerImpl implements BenchmarkRunner {
                     } catch (BrokenBarrierException e) {
                         e.printStackTrace();
                     }
-                }));
+                }).start();
+
             }
         });
-    }
-}
-
-class startBox {
-    private static Thread threadInBox;
-
-    public startBox(Thread t) {
-        threadInBox = t;
-        threadInBox.start();
-    }
-
-    public static Thread getThreadInBox() {
-        return threadInBox;
     }
 }
 
