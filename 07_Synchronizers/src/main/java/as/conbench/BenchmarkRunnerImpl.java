@@ -21,12 +21,20 @@ public class BenchmarkRunnerImpl implements BenchmarkRunner {
             run = new shouldRun();
 
             AtomicInteger nrOfThreads = new AtomicInteger();
-            desc.testMethods.forEach(tm -> nrOfThreads.addAndGet(tm.nThreads[0]));
+
+            int finalI1 = i;
+            desc.testMethods.forEach(tm -> nrOfThreads.addAndGet(tm.nThreads[finalI1]));
+
             barrier = new CyclicBarrier(nrOfThreads.get(), () -> end.set(System.nanoTime()));
             benchMarkRun(desc, i);
             System.out.println("Run " + i + " start ");
             Long start = System.nanoTime();
 
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             run.yes();
 
             while (end.get() == 0L) {
