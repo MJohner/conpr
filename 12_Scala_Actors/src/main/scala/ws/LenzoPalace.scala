@@ -36,14 +36,26 @@ import scala.language.postfixOps
  */
 object LenzoPalace {
   // Getränke
-  trait Drink
-  case object Coke extends Drink // 3 CHF
-  case object IceTea extends Drink // 3 CHF
+  trait Drink{
+    def getPrice(): Double
+  }
+  case object Coke extends Drink{
+      def getPrice(): Double = 3.0d
+  } // 3 CHF
+  case object IceTea extends Drink{
+    def getPrice(): Double = 3.0d
+  } // 3 CHF
 
   // Mahlzeiten
-  trait Food
-  case object Döner extends Food // 8 CHF
-  case object Dürüm extends Food // 9 CHF
+  trait Food{
+    def getPrice(): Double
+  }
+  case object Döner extends Food{
+    def getPrice(): Double = 8.0d
+  } // 8 CHF
+  case object Dürüm extends Food{
+    override def getPrice(): Double = 9.0d
+  } // 9 CHF
 
   // Customer -> Waiter
   case class Order(food: Food, drink: Drink, customer: ActorRef)
@@ -54,14 +66,41 @@ object LenzoPalace {
   // Cook -> Customer
   case class Plate(food: Food)
   // Boss -> Waiter
-  // TODO Message Klasse um Total abzufragen
+  case class WieVielGeld()
+  // Waiter -> Boss
+  case class SoVielGeld(geld: Double)
 
   class Waiter(cook: ActorRef) extends Actor {
-    def receive = ???
+    var turnover: Double = 0.0d
+    def receive = {
+      case Order(f, d, c) =>
+        c ! Glass(d)
+        cook ! FoodOrder(f, c)
+        turnover += f.getPrice
+        turnover += d.getPrice
+      case WieVielGeld =>
+        sender ! SoVielGeld(turnover)
+    }
   }
 
   class Cook extends Actor {
-    def receive = ???
+    def receive = {
+      case FoodOrder(f, c) =>
+        Thread.sleep(50)
+        c ! Plate(f)
+    }
+  }
+
+  class Boss extends Actor {
+    def receive ={
+      case SoVielGeld(geld) =>
+        if(geld > 10){
+          println("Machen gutes Geld: " + geld +" CHF")
+        }else{
+          println("Mehr arbeiten! : " + geld +" ist nicht viel")
+        }
+
+    }
   }
 
   def main(args: Array[String]): Unit = {
@@ -69,18 +108,22 @@ object LenzoPalace {
 
     val cook = as.actorOf(Props[Cook])
     val waiter = as.actorOf(Props(new Waiter(cook)))
-
+    val boss = as.actorOf(Props(new Boss))
     // Anonymer Kunde
-    as.actorOf(Props(new Actor {
-      waiter ! Order(Dürüm, IceTea, self)
+    for(i <- 1 to 100_000){
+      as.actorOf(Props(new Actor {
+        for(j <- 1 to 100) waiter ! Order(if (j%2==0) Dürüm else Döner, if (j%3==0) IceTea else Coke, self)
 
-      def receive = {
-        case Glass(IceTea) => println("Sluuurp")
-        case Plate(Dürüm) => println("Hmmm! Delicious!!")
-      }
-    }))
-    
+        def receive = {
+          case Glass(IceTea) => println("Sluuurp " + i)
+          case Plate(Dürüm) => println("Hmmm! Delicious!! " + i)
+        }
+      }))
+    }
+
+    waiter.tell(WieVielGeld, boss)
     Thread.sleep(100)
+    waiter.tell(WieVielGeld, boss)
     Await.ready(as.terminate(), Duration.Inf)
   }
 }
@@ -124,6 +167,8 @@ object Solutions {
     
   def main(args: Array[String]): Unit = {
     println("Uvre svaqra Fvr qvr Yöfhatra".rot13)
+    println(waiter.rot13)
+    println(cook.rot13)
   }
 }
  

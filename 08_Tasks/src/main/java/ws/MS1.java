@@ -113,11 +113,11 @@ public class MS1 implements Runnable {
 
         // Aufgabe 1)
         // 3 Threads, 4 Elemente sortieren
-        ExecutorService es = Executors.newFixedThreadPool(3);
+        //ExecutorService es = Executors.newFixedThreadPool(3);
 
         // Aufgabe 2)
         // Viele Threads, 4 Elemente sortieren
-//      ExecutorService es = cachedPool();
+      ExecutorService es = cachedPool();
 
         MS1 ms = new MS1(data, es);
         Future<?> f = es.submit(ms);
